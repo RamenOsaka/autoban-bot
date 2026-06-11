@@ -1,17 +1,17 @@
 """
-Auto-Ban Bot — Banni automatiquement tout membre qui reçoit un rôle interdit.
-Toute la configuration se gère via des commandes Discord (prefix !)
-et est persistée dans config.json.
+Auto-Ban Bot — Slash commands version
+Bans automatically any member who receives a forbidden role.
+All configuration is managed via Discord slash commands and persisted in config.json.
 """
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 import json
 import os
 import logging
 from datetime import datetime, timezone
 
-# ─── Logging console + fichier ───────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -21,28 +21,24 @@ logging.basicConfig(
     ]
 )
 
-TOKEN = os.environ.get("DISCORD_TOKEN", "VOTRE_TOKEN_ICI")
+TOKEN = os.environ.get("DISCORD_TOKEN", "YOUR_TOKEN_HERE")
 CONFIG_FILE = "config.json"
 
-# ─── Config par défaut (écrasée par config.json si présent) ──────────────────
 DEFAULT_CONFIG = {
-    "banned_roles": [],          # noms ou IDs de rôles qui déclenchent le ban
-    "log_channel_id": None,      # ID du salon de log (int ou null)
-    "ban_reason": "Ban automatique : rôle interdit détecté.",
-    "delete_messages_days": 1,   # jours de messages supprimés lors du ban (0-7)
-    "dm_user_before_ban": True,  # DM l'utilisateur avant de le bannir
-    "dm_message": "Tu as été banni automatiquement du serveur pour avoir reçu un rôle non autorisé.",
-    "ban_history": []            # liste des bans effectués par le bot
+    "banned_roles": [],
+    "log_channel_id": None,
+    "ban_reason": "Automatic ban: forbidden role detected.",
+    "delete_messages_days": 1,
+    "dm_user_before_ban": True,
+    "dm_message": "You have been automatically banned from the server for receiving a forbidden role.",
+    "ban_history": []
 }
 
-
-# ─── Persistance ─────────────────────────────────────────────────────────────
 
 def load_config() -> dict:
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-        # Fusionner avec les défauts pour les clés manquantes
         for key, value in DEFAULT_CONFIG.items():
             data.setdefault(key, value)
         return data
@@ -56,13 +52,12 @@ def save_config(cfg: dict):
 
 config = load_config()
 
-# ─── Bot ─────────────────────────────────────────────────────────────────────
-
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+tree = bot.tree
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -83,18 +78,17 @@ async def send_log(guild: discord.Guild, embed: discord.Embed):
             try:
                 await ch.send(embed=embed)
             except discord.Forbidden:
-                logging.warning("Impossible d'écrire dans le salon de log.")
+                logging.warning("Cannot write to log channel.")
 
 
 async def ban_member(member: discord.Member, trigger_role_name: str):
-    reason = f"{config['ban_reason']} (rôle : {trigger_role_name})"
+    reason = f"{config['ban_reason']} (role: {trigger_role_name})"
 
-    # DM avant le ban si activé
     if config["dm_user_before_ban"]:
         try:
             await member.send(config["dm_message"])
         except discord.Forbidden:
-            logging.info(f"DM impossible pour {member} (DMs fermés).")
+            logging.info(f"Could not DM {member} (DMs closed).")
 
     try:
         await member.ban(
@@ -102,9 +96,8 @@ async def ban_member(member: discord.Member, trigger_role_name: str):
             delete_message_days=max(0, min(7, int(config["delete_messages_days"])))
         )
         timestamp = datetime.now(timezone.utc).isoformat()
-        logging.info(f"Banni : {member} ({member.id}) — {reason}")
+        logging.info(f"Banned: {member} ({member.id}) — {reason}")
 
-        # Historique
         config["ban_history"].append({
             "user": str(member),
             "user_id": member.id,
@@ -112,36 +105,34 @@ async def ban_member(member: discord.Member, trigger_role_name: str):
             "reason": reason,
             "timestamp": timestamp
         })
-        # Garder seulement les 200 derniers
         config["ban_history"] = config["ban_history"][-200:]
         save_config(config)
 
-        # Embed de log
         embed = discord.Embed(
-            title="🔨 Ban automatique",
+            title="🔨 Automatic Ban",
             color=discord.Color.red(),
             timestamp=datetime.now(timezone.utc)
         )
-        embed.add_field(name="Utilisateur", value=f"{member} (`{member.id}`)", inline=True)
-        embed.add_field(name="Rôle déclencheur", value=trigger_role_name, inline=True)
-        embed.add_field(name="Raison", value=reason, inline=False)
-        embed.set_footer(text=f"DM envoyé : {'oui' if config['dm_user_before_ban'] else 'non'}")
+        embed.add_field(name="User", value=f"{member} (`{member.id}`)", inline=True)
+        embed.add_field(name="Trigger role", value=trigger_role_name, inline=True)
+        embed.add_field(name="Reason", value=reason, inline=False)
+        embed.set_footer(text=f"DM sent: {'yes' if config['dm_user_before_ban'] else 'no'}")
         await send_log(member.guild, embed)
 
     except discord.Forbidden:
-        logging.warning(f"Permission insuffisante pour bannir {member}.")
+        logging.warning(f"Insufficient permissions to ban {member}.")
     except discord.HTTPException as e:
-        logging.error(f"Erreur HTTP lors du ban de {member}: {e}")
+        logging.error(f"HTTP error while banning {member}: {e}")
 
 
-# ─── Événements ──────────────────────────────────────────────────────────────
+# ─── Events ──────────────────────────────────────────────────────────────────
 
 @bot.event
 async def on_ready():
-    logging.info(f"✅ Connecté en tant que {bot.user} ({bot.user.id})")
-    logging.info(f"Rôles surveillés : {config['banned_roles']}")
-    logging.info(f"Salon de log    : {config['log_channel_id']}")
-    logging.info(f"DM avant ban    : {config['dm_user_before_ban']}")
+    await tree.sync()
+    logging.info(f"✅ Logged in as {bot.user} ({bot.user.id})")
+    logging.info(f"Slash commands synced.")
+    logging.info(f"Watched roles: {config['banned_roles']}")
 
 
 @bot.event
@@ -161,183 +152,185 @@ async def on_member_join(member: discord.Member):
             break
 
 
-# ─── Guard : commandes réservées aux admins ───────────────────────────────────
+# ─── Permission check ────────────────────────────────────────────────────────
 
-def admin_only():
-    return commands.has_permissions(administrator=True)
+def is_admin(interaction: discord.Interaction) -> bool:
+    return interaction.user.guild_permissions.administrator
 
 
 # ════════════════════════════════════════════════════════════════════════════
-#  COMMANDES — RÔLES INTERDITS
+#  SLASH COMMANDS — BANNED ROLES
 # ════════════════════════════════════════════════════════════════════════════
 
-@bot.command(name="addrole")
-@admin_only()
-async def cmd_addrole(ctx, *, role_name: str):
-    """!addrole <nom_du_rôle>  —  Ajoute un rôle à la liste des rôles interdits."""
-    if role_name in config["banned_roles"]:
-        await ctx.send(f"⚠️ `{role_name}` est déjà dans la liste.")
+@tree.command(name="addrole", description="Add a role to the auto-ban list.")
+@app_commands.describe(role="The role that will trigger an automatic ban.")
+async def cmd_addrole(interaction: discord.Interaction, role: discord.Role):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
         return
-    config["banned_roles"].append(role_name)
-    save_config(config)
-    await ctx.send(f"✅ Rôle **{role_name}** ajouté aux rôles interdits.")
-
-
-@bot.command(name="removerole")
-@admin_only()
-async def cmd_removerole(ctx, *, role_name: str):
-    """!removerole <nom_du_rôle>  —  Retire un rôle de la liste."""
-    if role_name not in config["banned_roles"]:
-        await ctx.send(f"❌ `{role_name}` introuvable dans la liste.")
+    if role.name in config["banned_roles"] or role.id in config["banned_roles"]:
+        await interaction.response.send_message(f"⚠️ **{role.name}** is already in the ban list.", ephemeral=True)
         return
-    config["banned_roles"].remove(role_name)
+    config["banned_roles"].append(role.name)
     save_config(config)
-    await ctx.send(f"✅ Rôle **{role_name}** retiré des rôles interdits.")
+    await interaction.response.send_message(f"✅ Role **{role.name}** added to the auto-ban list.")
 
 
-@bot.command(name="listroles")
-@admin_only()
-async def cmd_listroles(ctx):
-    """!listroles  —  Affiche les rôles actuellement surveillés."""
+@tree.command(name="removerole", description="Remove a role from the auto-ban list.")
+@app_commands.describe(role="The role to remove from the auto-ban list.")
+async def cmd_removerole(interaction: discord.Interaction, role: discord.Role):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
+        return
+    if role.name not in config["banned_roles"]:
+        await interaction.response.send_message(f"❌ **{role.name}** is not in the ban list.", ephemeral=True)
+        return
+    config["banned_roles"].remove(role.name)
+    save_config(config)
+    await interaction.response.send_message(f"✅ Role **{role.name}** removed from the auto-ban list.")
+
+
+@tree.command(name="listroles", description="List all roles currently on the auto-ban list.")
+async def cmd_listroles(interaction: discord.Interaction):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
+        return
     if not config["banned_roles"]:
-        await ctx.send("Aucun rôle interdit configuré.")
+        await interaction.response.send_message("No forbidden roles configured.", ephemeral=True)
         return
     lines = "\n".join(f"• `{r}`" for r in config["banned_roles"])
-    await ctx.send(f"**Rôles interdits ({len(config['banned_roles'])}) :**\n{lines}")
+    await interaction.response.send_message(
+        f"**Forbidden roles ({len(config['banned_roles'])}):**\n{lines}", ephemeral=True
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
-#  COMMANDES — SALON DE LOG
+#  SLASH COMMANDS — LOG CHANNEL
 # ════════════════════════════════════════════════════════════════════════════
 
-@bot.command(name="setlog")
-@admin_only()
-async def cmd_setlog(ctx, channel: discord.TextChannel = None):
-    """!setlog [#salon]  —  Définit le salon de log. Sans argument = salon actuel."""
-    target = channel or ctx.channel
-    config["log_channel_id"] = target.id
+@tree.command(name="setlog", description="Set the channel where bans are logged.")
+@app_commands.describe(channel="The text channel to send ban logs to.")
+async def cmd_setlog(interaction: discord.Interaction, channel: discord.TextChannel):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
+        return
+    config["log_channel_id"] = channel.id
     save_config(config)
-    await ctx.send(f"✅ Salon de log défini sur {target.mention}.")
+    await interaction.response.send_message(f"✅ Log channel set to {channel.mention}.")
 
 
-@bot.command(name="removelog")
-@admin_only()
-async def cmd_removelog(ctx):
-    """!removelog  —  Désactive le salon de log."""
+@tree.command(name="removelog", description="Disable ban logging.")
+async def cmd_removelog(interaction: discord.Interaction):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
+        return
     config["log_channel_id"] = None
     save_config(config)
-    await ctx.send("✅ Salon de log désactivé.")
+    await interaction.response.send_message("✅ Log channel disabled.")
 
 
 # ════════════════════════════════════════════════════════════════════════════
-#  COMMANDES — MESSAGE DE BAN / DM
+#  SLASH COMMANDS — BAN BEHAVIOR
 # ════════════════════════════════════════════════════════════════════════════
 
-@bot.command(name="setreason")
-@admin_only()
-async def cmd_setreason(ctx, *, reason: str):
-    """!setreason <texte>  —  Modifie la raison affichée dans l'audit log Discord."""
+@tree.command(name="setreason", description="Set the ban reason shown in the Discord audit log.")
+@app_commands.describe(reason="The reason text shown in the audit log.")
+async def cmd_setreason(interaction: discord.Interaction, reason: str):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
+        return
     config["ban_reason"] = reason
     save_config(config)
-    await ctx.send(f"✅ Raison de ban mise à jour :\n> {reason}")
+    await interaction.response.send_message(f"✅ Ban reason updated:\n> {reason}")
 
 
-@bot.command(name="setdm")
-@admin_only()
-async def cmd_setdm(ctx, *, message: str):
-    """!setdm <message>  —  Modifie le DM envoyé à l'utilisateur avant le ban."""
+@tree.command(name="setdm", description="Set the DM message sent to the user before they are banned.")
+@app_commands.describe(message="The message the user will receive before being banned.")
+async def cmd_setdm(interaction: discord.Interaction, message: str):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
+        return
     config["dm_message"] = message
     save_config(config)
-    await ctx.send(f"✅ Message DM mis à jour :\n> {message}")
+    await interaction.response.send_message(f"✅ DM message updated:\n> {message}")
 
 
-@bot.command(name="toggledm")
-@admin_only()
-async def cmd_toggledm(ctx):
-    """!toggledm  —  Active/désactive le DM envoyé avant le ban."""
+@tree.command(name="toggledm", description="Enable or disable the DM sent to users before being banned.")
+async def cmd_toggledm(interaction: discord.Interaction):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
+        return
     config["dm_user_before_ban"] = not config["dm_user_before_ban"]
     save_config(config)
-    state = "activé ✅" if config["dm_user_before_ban"] else "désactivé ❌"
-    await ctx.send(f"DM avant ban : **{state}**")
+    state = "enabled ✅" if config["dm_user_before_ban"] else "disabled ❌"
+    await interaction.response.send_message(f"DM before ban: **{state}**")
 
 
-@bot.command(name="setdeletedays")
-@admin_only()
-async def cmd_setdeletedays(ctx, days: int):
-    """!setdeletedays <0-7>  —  Nombre de jours de messages supprimés lors du ban."""
+@tree.command(name="setdeletedays", description="Set how many days of messages to delete when banning (0–7).")
+@app_commands.describe(days="Number of days of messages to delete (0 = none, 7 = max).")
+async def cmd_setdeletedays(interaction: discord.Interaction, days: int):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
+        return
     if not 0 <= days <= 7:
-        await ctx.send("❌ La valeur doit être entre 0 et 7.")
+        await interaction.response.send_message("❌ Value must be between 0 and 7.", ephemeral=True)
         return
     config["delete_messages_days"] = days
     save_config(config)
-    await ctx.send(f"✅ Suppression des messages des **{days}** derniers jour(s) lors d'un ban.")
+    await interaction.response.send_message(f"✅ Will delete the last **{days}** day(s) of messages on ban.")
 
 
 # ════════════════════════════════════════════════════════════════════════════
-#  COMMANDES — HISTORIQUE & STATUT
+#  SLASH COMMANDS — HISTORY & STATUS
 # ════════════════════════════════════════════════════════════════════════════
 
-@bot.command(name="banhistory")
-@admin_only()
-async def cmd_banhistory(ctx, count: int = 10):
-    """!banhistory [n]  —  Affiche les n derniers bans effectués par le bot (défaut 10)."""
+@tree.command(name="banhistory", description="Show the most recent bans performed by the bot.")
+@app_commands.describe(count="Number of recent bans to show (max 20).")
+async def cmd_banhistory(interaction: discord.Interaction, count: int = 10):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
+        return
     history = config["ban_history"]
     if not history:
-        await ctx.send("Aucun ban enregistré.")
+        await interaction.response.send_message("No bans recorded.", ephemeral=True)
         return
     recent = history[-(min(count, 20)):][::-1]
     lines = []
     for entry in recent:
         ts = entry["timestamp"][:10]
-        lines.append(f"`{ts}` **{entry['user']}** (`{entry['user_id']}`) — rôle : `{entry['role']}`")
-    await ctx.send(f"**{len(recent)} dernier(s) ban(s) :**\n" + "\n".join(lines))
+        lines.append(f"`{ts}` **{entry['user']}** (`{entry['user_id']}`) — role: `{entry['role']}`")
+    await interaction.response.send_message(
+        f"**Last {len(recent)} ban(s):**\n" + "\n".join(lines), ephemeral=True
+    )
 
 
-@bot.command(name="clearhistory")
-@admin_only()
-async def cmd_clearhistory(ctx):
-    """!clearhistory  —  Vide l'historique des bans."""
+@tree.command(name="clearhistory", description="Clear the bot's ban history log.")
+async def cmd_clearhistory(interaction: discord.Interaction):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
+        return
     config["ban_history"] = []
     save_config(config)
-    await ctx.send("✅ Historique des bans vidé.")
+    await interaction.response.send_message("✅ Ban history cleared.")
 
 
-@bot.command(name="status")
-@admin_only()
-async def cmd_status(ctx):
-    """!status  —  Affiche la configuration complète du bot."""
-    log_mention = f"<#{config['log_channel_id']}>" if config["log_channel_id"] else "*(désactivé)*"
-    roles = ", ".join(f"`{r}`" for r in config["banned_roles"]) or "*(aucun)*"
+@tree.command(name="status", description="Display the bot's current configuration.")
+async def cmd_status(interaction: discord.Interaction):
+    if not is_admin(interaction):
+        await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
+        return
+    log_mention = f"<#{config['log_channel_id']}>" if config["log_channel_id"] else "*(disabled)*"
+    roles = ", ".join(f"`{r}`" for r in config["banned_roles"]) or "*(none)*"
 
-    embed = discord.Embed(title="⚙️ Configuration du bot", color=discord.Color.blurple())
-    embed.add_field(name="Rôles interdits", value=roles, inline=False)
-    embed.add_field(name="Salon de log", value=log_mention, inline=True)
-    embed.add_field(name="DM avant ban", value="✅" if config["dm_user_before_ban"] else "❌", inline=True)
-    embed.add_field(name="Suppression messages", value=f"{config['delete_messages_days']} jour(s)", inline=True)
-    embed.add_field(name="Raison (audit log)", value=f"> {config['ban_reason']}", inline=False)
-    embed.add_field(name="Message DM", value=f"> {config['dm_message']}", inline=False)
-    embed.add_field(name="Bans enregistrés", value=str(len(config["ban_history"])), inline=True)
-    await ctx.send(embed=embed)
-
-
-@bot.command(name="bothelp")
-async def cmd_help(ctx):
-    """!bothelp  —  Liste toutes les commandes disponibles."""
-    embed = discord.Embed(title="📖 Commandes du bot", color=discord.Color.blurple())
-    embed.add_field(name="Rôles interdits", value=(
-        "`!addrole <nom>`\n`!removerole <nom>`\n`!listroles`"
-    ), inline=False)
-    embed.add_field(name="Salon de log", value=(
-        "`!setlog [#salon]`\n`!removelog`"
-    ), inline=False)
-    embed.add_field(name="Comportement du ban", value=(
-        "`!setreason <texte>`\n`!setdm <message>`\n`!toggledm`\n`!setdeletedays <0-7>`"
-    ), inline=False)
-    embed.add_field(name="Historique & statut", value=(
-        "`!status`\n`!banhistory [n]`\n`!clearhistory`\n`!bothelp`"
-    ), inline=False)
-    embed.set_footer(text="Toutes les commandes requièrent la permission Administrateur.")
-    await ctx.send(embed=embed)
+    embed = discord.Embed(title="⚙️ Bot Configuration", color=discord.Color.blurple())
+    embed.add_field(name="Forbidden roles", value=roles, inline=False)
+    embed.add_field(name="Log channel", value=log_mention, inline=True)
+    embed.add_field(name="DM before ban", value="✅" if config["dm_user_before_ban"] else "❌", inline=True)
+    embed.add_field(name="Delete messages", value=f"{config['delete_messages_days']} day(s)", inline=True)
+    embed.add_field(name="Audit log reason", value=f"> {config['ban_reason']}", inline=False)
+    embed.add_field(name="DM message", value=f"> {config['dm_message']}", inline=False)
+    embed.add_field(name="Bans recorded", value=str(len(config["ban_history"])), inline=True)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 bot.run(TOKEN)
