@@ -136,6 +136,9 @@ async def ban_member(member: discord.Member, trigger_role_name: str):
 
 @bot.event
 async def on_ready():
+    bot.tree.clear_commands(guild=None)
+    autoban_fresh = AutoBanGroup(name="autoban", description="Auto-ban bot commands.")
+    bot.tree.add_command(autoban_fresh)
     await bot.tree.sync()
     logging.info(f"✅ Logged in as {bot.user} ({bot.user.id})")
     logging.info(f"Slash commands synced under /autoban")
