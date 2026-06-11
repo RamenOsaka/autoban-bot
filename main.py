@@ -59,7 +59,8 @@ config = load_config()
 # ─── Bot ─────────────────────────────────────────────────────────────────────
 
 intents = discord.Intents.default()
-intents.members = True   # OBLIGATOIRE — activer dans le Developer Portal
+intents.members = True
+intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
