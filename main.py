@@ -59,6 +59,12 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 tree = bot.tree
 
+class BanGroup(app_commands.Group):
+    pass
+
+ban = BanGroup(name="ban", description="Auto-ban bot commands.")
+tree.add_command(ban)
+
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -162,7 +168,7 @@ def is_admin(interaction: discord.Interaction) -> bool:
 #  SLASH COMMANDS — BANNED ROLES
 # ════════════════════════════════════════════════════════════════════════════
 
-@tree.command(name="addrole", description="Add a role to the auto-ban list.")
+@ban.command(name="addrole", description="Add a role to the auto-ban list.")
 @app_commands.describe(role="The role that will trigger an automatic ban.")
 async def cmd_addrole(interaction: discord.Interaction, role: discord.Role):
     if not is_admin(interaction):
@@ -176,7 +182,7 @@ async def cmd_addrole(interaction: discord.Interaction, role: discord.Role):
     await interaction.response.send_message(f"✅ Role **{role.name}** added to the auto-ban list.")
 
 
-@tree.command(name="removerole", description="Remove a role from the auto-ban list.")
+@ban.command(name="removerole", description="Remove a role from the auto-ban list.")
 @app_commands.describe(role="The role to remove from the auto-ban list.")
 async def cmd_removerole(interaction: discord.Interaction, role: discord.Role):
     if not is_admin(interaction):
@@ -190,7 +196,7 @@ async def cmd_removerole(interaction: discord.Interaction, role: discord.Role):
     await interaction.response.send_message(f"✅ Role **{role.name}** removed from the auto-ban list.")
 
 
-@tree.command(name="listroles", description="List all roles currently on the auto-ban list.")
+@ban.command(name="listroles", description="List all roles currently on the auto-ban list.")
 async def cmd_listroles(interaction: discord.Interaction):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
@@ -208,7 +214,7 @@ async def cmd_listroles(interaction: discord.Interaction):
 #  SLASH COMMANDS — LOG CHANNEL
 # ════════════════════════════════════════════════════════════════════════════
 
-@tree.command(name="setlog", description="Set the channel where bans are logged.")
+@ban.command(name="setlog", description="Set the channel where bans are logged.")
 @app_commands.describe(channel="The text channel to send ban logs to.")
 async def cmd_setlog(interaction: discord.Interaction, channel: discord.TextChannel):
     if not is_admin(interaction):
@@ -219,7 +225,7 @@ async def cmd_setlog(interaction: discord.Interaction, channel: discord.TextChan
     await interaction.response.send_message(f"✅ Log channel set to {channel.mention}.")
 
 
-@tree.command(name="removelog", description="Disable ban logging.")
+@ban.command(name="removelog", description="Disable ban logging.")
 async def cmd_removelog(interaction: discord.Interaction):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
@@ -233,7 +239,7 @@ async def cmd_removelog(interaction: discord.Interaction):
 #  SLASH COMMANDS — BAN BEHAVIOR
 # ════════════════════════════════════════════════════════════════════════════
 
-@tree.command(name="setreason", description="Set the ban reason shown in the Discord audit log.")
+@ban.command(name="setreason", description="Set the ban reason shown in the Discord audit log.")
 @app_commands.describe(reason="The reason text shown in the audit log.")
 async def cmd_setreason(interaction: discord.Interaction, reason: str):
     if not is_admin(interaction):
@@ -244,7 +250,7 @@ async def cmd_setreason(interaction: discord.Interaction, reason: str):
     await interaction.response.send_message(f"✅ Ban reason updated:\n> {reason}")
 
 
-@tree.command(name="setdm", description="Set the DM message sent to the user before they are banned.")
+@ban.command(name="setdm", description="Set the DM message sent to the user before they are banned.")
 @app_commands.describe(message="The message the user will receive before being banned.")
 async def cmd_setdm(interaction: discord.Interaction, message: str):
     if not is_admin(interaction):
@@ -255,7 +261,7 @@ async def cmd_setdm(interaction: discord.Interaction, message: str):
     await interaction.response.send_message(f"✅ DM message updated:\n> {message}")
 
 
-@tree.command(name="toggledm", description="Enable or disable the DM sent to users before being banned.")
+@ban.command(name="toggledm", description="Enable or disable the DM sent to users before being banned.")
 async def cmd_toggledm(interaction: discord.Interaction):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
@@ -266,7 +272,7 @@ async def cmd_toggledm(interaction: discord.Interaction):
     await interaction.response.send_message(f"DM before ban: **{state}**")
 
 
-@tree.command(name="setdeletedays", description="Set how many days of messages to delete when banning (0–7).")
+@ban.command(name="setdeletedays", description="Set how many days of messages to delete when banning (0–7).")
 @app_commands.describe(days="Number of days of messages to delete (0 = none, 7 = max).")
 async def cmd_setdeletedays(interaction: discord.Interaction, days: int):
     if not is_admin(interaction):
@@ -284,7 +290,7 @@ async def cmd_setdeletedays(interaction: discord.Interaction, days: int):
 #  SLASH COMMANDS — HISTORY & STATUS
 # ════════════════════════════════════════════════════════════════════════════
 
-@tree.command(name="banhistory", description="Show the most recent bans performed by the bot.")
+@ban.command(name="banhistory", description="Show the most recent bans performed by the bot.")
 @app_commands.describe(count="Number of recent bans to show (max 20).")
 async def cmd_banhistory(interaction: discord.Interaction, count: int = 10):
     if not is_admin(interaction):
@@ -304,7 +310,7 @@ async def cmd_banhistory(interaction: discord.Interaction, count: int = 10):
     )
 
 
-@tree.command(name="clearhistory", description="Clear the bot's ban history log.")
+@ban.command(name="clearhistory", description="Clear the bot's ban history log.")
 async def cmd_clearhistory(interaction: discord.Interaction):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
@@ -314,7 +320,7 @@ async def cmd_clearhistory(interaction: discord.Interaction):
     await interaction.response.send_message("✅ Ban history cleared.")
 
 
-@tree.command(name="status", description="Display the bot's current configuration.")
+@ban.command(name="status", description="Display the bot's current configuration.")
 async def cmd_status(interaction: discord.Interaction):
     if not is_admin(interaction):
         await interaction.response.send_message("❌ Administrator permission required.", ephemeral=True)
