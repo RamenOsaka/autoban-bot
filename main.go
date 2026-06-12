@@ -1,15 +1,17 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"slices"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
 )
+
+var bannedRoles = []string{"1514834166892597420"}
 
 func main() {
 	// Setting up discord token
@@ -22,7 +24,8 @@ func main() {
 
 	// Adding handlers
 	dg.AddHandler(ready)
-	dg.AddHandler(handlerName)
+	dg.AddHandler(handlerRoleUpdate)
+	dg.AddHandler(handlerRoleOnJoin)
 
 	// Setting up discord Intents
 	dg.Identify.Intents = discordgo.IntentGuildMembers
@@ -46,21 +49,20 @@ func ready(s *discordgo.Session, event *discordgo.Ready) {
 	s.UpdateGameStatus(0, "Dev Env")
 }
 
-func handlerName(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
-	fmt.Print("Username :", m.User.Username, " | Roles : ")
-	roleList, err := s.GuildRoles(m.GuildID)
-	if err != nil {
-		log.Println("Error trying to read the Guild's roles: ", err)
-	}
-
+func banRole(s *discordgo.Session, m *discordgo.Member) {
 	for i := 0; i < len(m.Roles); i++ {
-		for j := 0; j < len(roleList); j++ {
-			if roleList[j].ID == m.Roles[i] {
-				fmt.Print(roleList[j].Name, " ")
-			}
+		if slices.Contains(bannedRoles, m.Roles[i]) {
+			s.GuildBanCreateWithReason(m.GuildID, m.User.ID, "Picked a banned role", 7)
 		}
 	}
-	fmt.Println()
+}
+
+func handlerRoleOnJoin(s *discordgo.Session, m *discordgo.GuildMemberAdd) {
+	banRole(s, m.Member)
+}
+
+func handlerRoleUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
+	banRole(s, m.Member)
 }
 
 func loadToken() string {
@@ -73,6 +75,5 @@ func loadToken() string {
 	if !exists {
 		log.Println("DISCORD_TOKEN is not set!")
 	}
-
 	return token
 }
