@@ -12,14 +12,33 @@ import (
 )
 
 var serverConfigs = map[string]ServerConfig{}
-var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
-    "ping":    handlePing,
-    "addrole": handleAddRole,
+var commands = map[string]Command{
+	    "ping": {
+        Definition: &discordgo.ApplicationCommand{
+            Name:        "ping",
+            Description: "Hello there",
+        },
+        Handler: handlePing,
+    },
+    "addrole": {
+        Definition: &discordgo.ApplicationCommand{
+            Name:        "addrole",
+            Description: "Adds a role to the autoban role list",
+            Options: []*discordgo.ApplicationCommandOption{
+                {
+                    Type:        discordgo.ApplicationCommandOptionRole,
+                    Name:        "role",
+                    Description: "role to be added",
+                    Required:    true,
+                },
+            },
+        },
+        Handler: handleAddRole,
+    },
 }
 
 //remove in prod
 var serverID = "1260943648695255140"
-var commandList = []discordgo.ApplicationCommand{}
 
 func main() {
 	// Setting up discord token
@@ -45,29 +64,9 @@ func main() {
 		log.Println("Error opening Discord session: ", err)
 	}
 
-	// Adding commands
-	addRole := &discordgo.ApplicationCommand{
-		Name:        "addrole",
-		Description: "Adds a role to the autoban role list",
-		Options: []*discordgo.ApplicationCommandOption{
-			{
-				Type:        discordgo.ApplicationCommandOptionRole,
-				Name:        "role",
-				Description: "role to be added",
-				Required:    true,
-			},
-		},
-	}
-	commandList = append(commandList, *addRole)
-
-	pingCommand := &discordgo.ApplicationCommand{
-		Name:        "ping",
-		Description: "Hello there",
-	}
-	commandList = append(commandList, *pingCommand)
-
-	for i := 0; i < len(commandList); i++ {
-		_, err = dg.ApplicationCommandCreate(appID, serverID, &commandList[i])
+	// Creating commands
+	for cmd := range commands {
+		_, err = dg.ApplicationCommandCreate(appID, serverID, commands[cmd].Definition)
 		if err != nil {
 			log.Println("Error creating a new command : ", err)
 		}
@@ -109,8 +108,8 @@ func handlerInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	if i.Type == discordgo.InteractionApplicationCommand {
-		if handler, exists := commandHandlers[i.ApplicationCommandData().Name]; exists {
-			handler(s, i)
+		if cmd, exists := commands[i.ApplicationCommandData().Name]; exists {
+			cmd.Handler(s, i)
 		}
 	}
 }
@@ -134,36 +133,4 @@ func loadEnv() (string, string) {
 		log.Println("APP_ID is empty!")
 	}
 	return token, appID
-}
-
-// Slash command functions
-
-func handlePing(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: 4,
-				Data: &discordgo.InteractionResponseData{
-					Content: "Pong!",
-				},
-			})
-}
-
-func handleAddRole(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if slices.Contains(serverConfigs[i.GuildID].bannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID) {
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: 4,
-					Data: &discordgo.InteractionResponseData{
-						Content: "Role **" + i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).Name + "** is already in the banned list role.",
-					},
-				})
-			} else {
-				config := serverConfigs[i.GuildID]
-				config.bannedRoles = append(serverConfigs[i.GuildID].bannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID)
-				serverConfigs[i.GuildID] = config
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: 4,
-					Data: &discordgo.InteractionResponseData{
-						Content: "Role **" + i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).Name + "** has been added to the banned list role.",
-					},
-				})
-			}
 }
