@@ -11,7 +11,13 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var bannedRoles = []string{"1514834166892597420"}
+var serverConfigs = map[string]ServerConfig{}
+var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
+    "ping":    handlePing,
+    "addrole": handleAddRole,
+}
+
+//remove in prod
 var serverID = "1260943648695255140"
 var commandList = []discordgo.ApplicationCommand{}
 
@@ -33,11 +39,13 @@ func main() {
 	// Setting up discord Intents
 	dg.Identify.Intents = discordgo.IntentGuildMembers
 
+	// Opening websocket
 	err = dg.Open()
 	if err != nil {
 		log.Println("Error opening Discord session: ", err)
 	}
 
+	// Adding commands
 	addRole := &discordgo.ApplicationCommand{
 		Name:        "addrole",
 		Description: "Adds a role to the autoban role list",
@@ -81,7 +89,7 @@ func ready(s *discordgo.Session, event *discordgo.Ready) {
 
 func banRole(s *discordgo.Session, m *discordgo.Member) {
 	for i := 0; i < len(m.Roles); i++ {
-		if slices.Contains(bannedRoles, m.Roles[i]) {
+		if slices.Contains(serverConfigs[m.GuildID].bannedRoles, m.Roles[i]) {
 			s.GuildBanCreateWithReason(m.GuildID, m.User.ID, "Picked a banned role", 7)
 		}
 	}
@@ -96,31 +104,13 @@ func handlerRoleUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
 }
 
 func handlerInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	if _, exists := serverConfigs[i.GuildID]; !exists {
+		serverConfigs[i.GuildID] = ServerConfig{}
+	}
+
 	if i.Type == discordgo.InteractionApplicationCommand {
-		if i.ApplicationCommandData().Name == "ping" {
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: 4,
-				Data: &discordgo.InteractionResponseData{
-					Content: "Pong!",
-				},
-			})
-		} else if i.ApplicationCommandData().Name == "addrole" {
-			if slices.Contains(bannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, serverID).ID) {
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: 4,
-					Data: &discordgo.InteractionResponseData{
-						Content: "Role **" + i.ApplicationCommandData().Options[0].RoleValue(s, serverID).Name + "** is already in the banned list role.",
-					},
-				})
-			} else {
-				bannedRoles = append(bannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, serverID).ID)
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: 4,
-					Data: &discordgo.InteractionResponseData{
-						Content: "Role **" + i.ApplicationCommandData().Options[0].RoleValue(s, serverID).Name + "** has been added to the banned list role.",
-					},
-				})
-			}
+		if handler, exists := commandHandlers[i.ApplicationCommandData().Name]; exists {
+			handler(s, i)
 		}
 	}
 }
@@ -134,10 +124,46 @@ func loadEnv() (string, string) {
 	token, exists := os.LookupEnv("DISCORD_TOKEN")
 	if !exists {
 		log.Println("DISCORD_TOKEN is not set!")
+	} else if token == "" {
+		log.Println("DISCORD_TOKEN is empty!")
 	}
 	appID, exists := os.LookupEnv("APP_ID")
 	if !exists {
 		log.Println("APP_ID is not set!")
+	} else if token == "" {
+		log.Println("APP_ID is empty!")
 	}
 	return token, appID
+}
+
+// Slash command functions
+
+func handlePing(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: 4,
+				Data: &discordgo.InteractionResponseData{
+					Content: "Pong!",
+				},
+			})
+}
+
+func handleAddRole(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	if slices.Contains(serverConfigs[i.GuildID].bannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID) {
+				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: 4,
+					Data: &discordgo.InteractionResponseData{
+						Content: "Role **" + i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).Name + "** is already in the banned list role.",
+					},
+				})
+			} else {
+				config := serverConfigs[i.GuildID]
+				config.bannedRoles = append(serverConfigs[i.GuildID].bannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID)
+				serverConfigs[i.GuildID] = config
+				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: 4,
+					Data: &discordgo.InteractionResponseData{
+						Content: "Role **" + i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).Name + "** has been added to the banned list role.",
+					},
+				})
+			}
 }
