@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 	"os/signal"
@@ -11,6 +12,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
+var configFileName = "config.json"
 var serverConfigs = map[string]ServerConfig{}
 var commands = map[string]Command{
 	    "ping": {
@@ -71,6 +73,9 @@ func main() {
 		return
 	}
 
+	//Loading data
+	loadConfig()
+
 	// Adding handlers
 	dg.AddHandler(ready)
 	dg.AddHandler(handlerRoleUpdate)
@@ -110,7 +115,7 @@ func ready(s *discordgo.Session, event *discordgo.Ready) {
 
 func banRole(s *discordgo.Session, m *discordgo.Member) {
 	for i := 0; i < len(m.Roles); i++ {
-		if slices.Contains(serverConfigs[m.GuildID].bannedRoles, m.Roles[i]) {
+		if slices.Contains(serverConfigs[m.GuildID].BannedRoles, m.Roles[i]) {
 			s.GuildBanCreateWithReason(m.GuildID, m.User.ID, "Picked a banned role", 7)
 		}
 	}
@@ -134,6 +139,30 @@ func handlerInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			cmd.Handler(s, i)
 		}
 	}
+}
+
+func saveConfig() {
+	config, err := json.Marshal(serverConfigs)
+	if err != nil {
+		log.Println("Could not transform serverConfigs into json data: ", err)
+	}
+	os.WriteFile(configFileName, config, 0644)
+}
+
+func loadConfig() {
+	var data map[string]ServerConfig
+	config, err :=  os.ReadFile(configFileName)
+	if err != nil {
+		log.Println(configFileName + " Hasn't been created yet : ", err)
+		serverConfigs = map[string]ServerConfig{}
+		return
+	} else if len(config) == 0 {
+		serverConfigs = map[string]ServerConfig{}
+		return
+	}
+
+	json.Unmarshal(config, &data)
+	serverConfigs = data
 }
 
 func loadEnv() (string, string) {

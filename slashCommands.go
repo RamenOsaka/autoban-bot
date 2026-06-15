@@ -1,7 +1,9 @@
 package main
 
 import (
+	"log"
 	"slices"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -16,13 +18,32 @@ func handlePing(s *discordgo.Session, i *discordgo.InteractionCreate) {
 }
 
 func handlerListBannedRoles(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	listContent := "Banned roles :"
-	// for _, roleID := range serverConfigs[i.GuildID].bannedRoles {
-	// 	for roles := range s.GuildRoles(i.GuildID) {
+	names := []string{}
+	listContent := "Banned roles : "
+	roleList, err := s.GuildRoles(i.GuildID)
+	if err != nil {
+		log.Println("Error trying to retrieve role list :", err)
+	}
 
-	// 		listContent = listContent + " **" + +"**"
-	// 	}
-	// }
+	if len(serverConfigs[i.GuildID].BannedRoles) == 0 {
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: 4,
+		Data: &discordgo.InteractionResponseData{
+			Content: "The banned role list is empty",
+			},
+		})
+		return
+	} else {
+		for _, roleID := range serverConfigs[i.GuildID].BannedRoles {
+			for _, role := range roleList {
+				if role.ID == roleID  {
+					names = append(names, role.Name)
+				}
+			}
+		}
+	}
+
+	listContent = listContent + strings.Join(names, ", ")
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: 4,
 		Data: &discordgo.InteractionResponseData{
@@ -32,7 +53,7 @@ func handlerListBannedRoles(s *discordgo.Session, i *discordgo.InteractionCreate
 }
 
 func handleAddRole(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if slices.Contains(serverConfigs[i.GuildID].bannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID) {
+	if slices.Contains(serverConfigs[i.GuildID].BannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID) {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: 4,
 			Data: &discordgo.InteractionResponseData{
@@ -41,7 +62,7 @@ func handleAddRole(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		})
 	} else {
 		config := serverConfigs[i.GuildID]
-		config.bannedRoles = append(serverConfigs[i.GuildID].bannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID)
+		config.BannedRoles = append(serverConfigs[i.GuildID].BannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID)
 		serverConfigs[i.GuildID] = config
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: 4,
@@ -50,12 +71,13 @@ func handleAddRole(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			},
 		})
 	}
+	saveConfig()
 }
 
 func handlerRemoveRole(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if slices.Contains(serverConfigs[i.GuildID].bannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID) {
+	if slices.Contains(serverConfigs[i.GuildID].BannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID) {
 		config := serverConfigs[i.GuildID]
-		config.bannedRoles = slices.Delete(config.bannedRoles, slices.Index(config.bannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID), slices.Index(config.bannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID)+1)
+		config.BannedRoles = slices.Delete(config.BannedRoles, slices.Index(config.BannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID), slices.Index(config.BannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID)+1)
 		serverConfigs[i.GuildID] = config
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: 4,
@@ -71,4 +93,5 @@ func handlerRemoveRole(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			},
 		})
 	}
+	saveConfig()
 }
