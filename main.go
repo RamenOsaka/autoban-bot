@@ -99,7 +99,7 @@ func main() {
 		}
 	}
 
-	log.Println("Autoban is now running.  Press CTRL-C to exit.")
+	log.Println("RamenBot is now running.  Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
