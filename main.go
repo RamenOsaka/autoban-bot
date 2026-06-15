@@ -35,6 +35,28 @@ var commands = map[string]Command{
         },
         Handler: handleAddRole,
     },
+	"removerole": {
+        Definition: &discordgo.ApplicationCommand{
+            Name:        "removerole",
+            Description: "Removes a role to the autoban role list",
+            Options: []*discordgo.ApplicationCommandOption{
+                {
+                    Type:        discordgo.ApplicationCommandOptionRole,
+                    Name:        "role",
+                    Description: "role to be removed",
+                    Required:    true,
+                },
+            },
+        },
+        Handler: handlerRemoveRole,
+    },
+	"listbannedroles": {
+        Definition: &discordgo.ApplicationCommand{
+            Name:        "listbannedroles",
+            Description: "Lists all banned roles.",
+        },
+        Handler: handlerListBannedRoles,
+    },
 }
 
 //remove in prod
