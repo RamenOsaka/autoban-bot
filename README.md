@@ -10,7 +10,7 @@ RamenBot is lightweight and fast, if you only intend to use it on your own serve
 
 ## Installation
 
-1. Clone this repository to your local directory, and enter the folder (```git clone https://github.com/RamenOsaka/autoban-bot* & cd autoban-bot```)
+1. Clone this repository to your local directory, and enter the folder (```git clone https://github.com/RamenOsaka/autoban-bot & cd autoban-bot```)
 2. Set up the environnement variables ```DISCORD_TOKEN``` and ```APP_ID```. If you do not know how to set up environnement variables, you can create a ```.env``` file in the root folder of the bot and add one environnement variable by line with the synthax ```VARIABLE=VALUE```.
     1. ```DISCORD_TOKEN```is the identification token of your discord bot, it should be a 3 part alphanumerical string.
     2. ```APP_ID``` is a number associated to your application ID, found under **General Information** in the developer portal.
