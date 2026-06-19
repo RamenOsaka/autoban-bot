@@ -16,12 +16,9 @@ var configFileName = "config.json"
 var defaultPerms int64 = discordgo.PermissionAdministrator
 var serverConfigs = map[string]ServerConfig{}
 
-//remove in prod
-var serverID = "1260943648695255140"
-
 func main() {
 	// Setting up discord token
-	discordToken, appID := loadEnv()
+	discordToken, appID, serverID := loadEnv()
 	dg, err := discordgo.New("Bot " + discordToken)
 	if err != nil {
 		log.Println("Error creating Discord session: ", err)
@@ -92,9 +89,9 @@ func saveConfig() {
 
 func loadConfig() {
 	var data map[string]ServerConfig
-	config, err :=  os.ReadFile(configFileName)
+	config, err := os.ReadFile(configFileName)
 	if err != nil {
-		log.Println(configFileName + " Hasn't been created yet : ", err)
+		log.Println(configFileName+" Hasn't been created yet : ", err)
 		serverConfigs = map[string]ServerConfig{}
 		return
 	} else if len(config) == 0 {
@@ -106,7 +103,7 @@ func loadConfig() {
 	serverConfigs = data
 }
 
-func loadEnv() (string, string) {
+func loadEnv() (string, string, string) {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -124,5 +121,11 @@ func loadEnv() (string, string) {
 	} else if token == "" {
 		log.Println("APP_ID is empty!")
 	}
-	return token, appID
+	serverID, exists := os.LookupEnv("SERVER_ID")
+	if !exists {
+		log.Println("SERVER_ID is not set!")
+	} else if token == "" {
+		log.Println("SERVER_ID is empty!")
+	}
+	return token, appID, serverID
 }
