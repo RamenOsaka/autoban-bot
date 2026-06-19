@@ -14,52 +14,6 @@ import (
 
 var configFileName = "config.json"
 var serverConfigs = map[string]ServerConfig{}
-var commands = map[string]Command{
-	    "ping": {
-        Definition: &discordgo.ApplicationCommand{
-            Name:        "ping",
-            Description: "Hello there",
-        },
-        Handler: handlePing,
-    },
-    "addrole": {
-        Definition: &discordgo.ApplicationCommand{
-            Name:        "addrole",
-            Description: "Adds a role to the autoban role list",
-            Options: []*discordgo.ApplicationCommandOption{
-                {
-                    Type:        discordgo.ApplicationCommandOptionRole,
-                    Name:        "role",
-                    Description: "role to be added",
-                    Required:    true,
-                },
-            },
-        },
-        Handler: handleAddRole,
-    },
-	"removerole": {
-        Definition: &discordgo.ApplicationCommand{
-            Name:        "removerole",
-            Description: "Removes a role to the autoban role list",
-            Options: []*discordgo.ApplicationCommandOption{
-                {
-                    Type:        discordgo.ApplicationCommandOptionRole,
-                    Name:        "role",
-                    Description: "role to be removed",
-                    Required:    true,
-                },
-            },
-        },
-        Handler: handlerRemoveRole,
-    },
-	"listbannedroles": {
-        Definition: &discordgo.ApplicationCommand{
-            Name:        "listbannedroles",
-            Description: "Lists all banned roles.",
-        },
-        Handler: handlerListBannedRoles,
-    },
-}
 
 //remove in prod
 var serverID = "1260943648695255140"
@@ -107,38 +61,24 @@ func main() {
 	dg.Close()
 }
 
-func ready(s *discordgo.Session, event *discordgo.Ready) {
-
-	// Set the playing status.
-	s.UpdateGameStatus(0, "Dev Env")
-}
-
-func banRole(s *discordgo.Session, m *discordgo.Member) {
+func banRole(s *discordgo.Session, m *discordgo.Member) string {
+	roleName := ""
 	for i := 0; i < len(m.Roles); i++ {
-		if slices.Contains(serverConfigs[m.GuildID].BannedRoles, m.Roles[i]) {
+		if slices.Contains(serverConfigs[m.GuildID].BannedRolesID, m.Roles[i]) {
 			s.GuildBanCreateWithReason(m.GuildID, m.User.ID, "Picked a banned role", 7)
+
+			roleList, err := s.GuildRoles(m.GuildID)
+			if err != nil {
+				log.Println("Couldn't get the list of the server's role : ", err)
+			}
+
+			index := slices.IndexFunc(roleList, func(u *discordgo.Role) bool {
+				return u.ID == m.Roles[i]
+			})
+			roleName = roleList[index].Name
 		}
 	}
-}
-
-func handlerRoleOnJoin(s *discordgo.Session, m *discordgo.GuildMemberAdd) {
-	banRole(s, m.Member)
-}
-
-func handlerRoleUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
-	banRole(s, m.Member)
-}
-
-func handlerInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if _, exists := serverConfigs[i.GuildID]; !exists {
-		serverConfigs[i.GuildID] = ServerConfig{}
-	}
-
-	if i.Type == discordgo.InteractionApplicationCommand {
-		if cmd, exists := commands[i.ApplicationCommandData().Name]; exists {
-			cmd.Handler(s, i)
-		}
-	}
+	return roleName
 }
 
 func saveConfig() {

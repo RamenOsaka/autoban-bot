@@ -3,7 +3,8 @@ package main
 import "github.com/bwmarrin/discordgo"
 
 type ServerConfig struct {
-	BannedRoles []string
+	BannedRolesID []string
+	LogChannelID string
 }
 type Command struct {
 	Definition *discordgo.ApplicationCommand

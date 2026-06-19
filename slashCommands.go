@@ -7,6 +7,67 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 )
+var commands = map[string]Command{
+	    "ping": {
+        Definition: &discordgo.ApplicationCommand{
+            Name:        "ping",
+            Description: "Hello there",
+        },
+        Handler: handlePing,
+    },
+    "addrole": {
+        Definition: &discordgo.ApplicationCommand{
+            Name:        "addrole",
+            Description: "Adds a role to the autoban role list",
+            Options: []*discordgo.ApplicationCommandOption{
+                {
+                    Type:        discordgo.ApplicationCommandOptionRole,
+                    Name:        "role",
+                    Description: "role to be added",
+                    Required:    true,
+                },
+            },
+        },
+        Handler: handleAddRole,
+    },
+	"removerole": {
+        Definition: &discordgo.ApplicationCommand{
+            Name:        "removerole",
+            Description: "Removes a role to the autoban role list",
+            Options: []*discordgo.ApplicationCommandOption{
+                {
+                    Type:        discordgo.ApplicationCommandOptionRole,
+                    Name:        "role",
+                    Description: "role to be removed",
+                    Required:    true,
+                },
+            },
+        },
+        Handler: handleRemoveRole,
+    },
+	"listbannedroles": {
+        Definition: &discordgo.ApplicationCommand{
+            Name:        "listbannedroles",
+            Description: "Lists all banned roles.",
+        },
+        Handler: handleListBannedRoles,
+    },
+	"setlogchannel": {
+		Definition: &discordgo.ApplicationCommand{
+			Name: "setlogchannel",
+			Description: "Select channel to output logs to.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionChannel,
+					Name:        "channel",
+					Description: "log channel",
+					Required:    true,
+				},
+			},
+		},
+		Handler: handleSetLogChannel,
+	},
+}
 
 func handlePing(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -17,7 +78,7 @@ func handlePing(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 }
 
-func handlerListBannedRoles(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func handleListBannedRoles(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	names := []string{}
 	listContent := "Banned roles : "
 	roleList, err := s.GuildRoles(i.GuildID)
@@ -25,7 +86,7 @@ func handlerListBannedRoles(s *discordgo.Session, i *discordgo.InteractionCreate
 		log.Println("Error trying to retrieve role list :", err)
 	}
 
-	if len(serverConfigs[i.GuildID].BannedRoles) == 0 {
+	if len(serverConfigs[i.GuildID].BannedRolesID) == 0 {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: 4,
 		Data: &discordgo.InteractionResponseData{
@@ -34,7 +95,7 @@ func handlerListBannedRoles(s *discordgo.Session, i *discordgo.InteractionCreate
 		})
 		return
 	} else {
-		for _, roleID := range serverConfigs[i.GuildID].BannedRoles {
+		for _, roleID := range serverConfigs[i.GuildID].BannedRolesID {
 			for _, role := range roleList {
 				if role.ID == roleID  {
 					names = append(names, role.Name)
@@ -53,7 +114,7 @@ func handlerListBannedRoles(s *discordgo.Session, i *discordgo.InteractionCreate
 }
 
 func handleAddRole(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if slices.Contains(serverConfigs[i.GuildID].BannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID) {
+	if slices.Contains(serverConfigs[i.GuildID].BannedRolesID, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID) {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: 4,
 			Data: &discordgo.InteractionResponseData{
@@ -62,7 +123,7 @@ func handleAddRole(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		})
 	} else {
 		config := serverConfigs[i.GuildID]
-		config.BannedRoles = append(serverConfigs[i.GuildID].BannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID)
+		config.BannedRolesID = append(serverConfigs[i.GuildID].BannedRolesID, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID)
 		serverConfigs[i.GuildID] = config
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: 4,
@@ -74,10 +135,10 @@ func handleAddRole(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	saveConfig()
 }
 
-func handlerRemoveRole(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if slices.Contains(serverConfigs[i.GuildID].BannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID) {
+func handleRemoveRole(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	if slices.Contains(serverConfigs[i.GuildID].BannedRolesID, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID) {
 		config := serverConfigs[i.GuildID]
-		config.BannedRoles = slices.Delete(config.BannedRoles, slices.Index(config.BannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID), slices.Index(config.BannedRoles, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID)+1)
+		config.BannedRolesID = slices.Delete(config.BannedRolesID, slices.Index(config.BannedRolesID, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID), slices.Index(config.BannedRolesID, i.ApplicationCommandData().Options[0].RoleValue(s, i.GuildID).ID)+1)
 		serverConfigs[i.GuildID] = config
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: 4,
@@ -93,5 +154,18 @@ func handlerRemoveRole(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			},
 		})
 	}
+	saveConfig()
+}
+
+func handleSetLogChannel(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	config := serverConfigs[i.GuildID]
+	config.LogChannelID = i.ApplicationCommandData().Options[0].ChannelValue(s).ID
+	serverConfigs[i.GuildID] = config
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: 4,
+			Data: &discordgo.InteractionResponseData{
+				Content: "Channel **" + i.ApplicationCommandData().Options[0].ChannelValue(s).Name + "** has been set as the log channel.",
+			},
+		})
 	saveConfig()
 }
