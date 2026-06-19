@@ -13,6 +13,7 @@ import (
 )
 
 var configFileName = "config.json"
+var defaultPerms int64 = discordgo.PermissionAdministrator
 var serverConfigs = map[string]ServerConfig{}
 
 //remove in prod

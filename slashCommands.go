@@ -12,6 +12,7 @@ var commands = map[string]Command{
         Definition: &discordgo.ApplicationCommand{
             Name:        "ping",
             Description: "Hello there",
+			DefaultMemberPermissions: &defaultPerms,
         },
         Handler: handlePing,
     },
@@ -19,6 +20,7 @@ var commands = map[string]Command{
         Definition: &discordgo.ApplicationCommand{
             Name:        "addrole",
             Description: "Adds a role to the autoban role list",
+			DefaultMemberPermissions: &defaultPerms,
             Options: []*discordgo.ApplicationCommandOption{
                 {
                     Type:        discordgo.ApplicationCommandOptionRole,
@@ -34,6 +36,7 @@ var commands = map[string]Command{
         Definition: &discordgo.ApplicationCommand{
             Name:        "removerole",
             Description: "Removes a role to the autoban role list",
+			DefaultMemberPermissions: &defaultPerms,
             Options: []*discordgo.ApplicationCommandOption{
                 {
                     Type:        discordgo.ApplicationCommandOptionRole,
@@ -49,6 +52,7 @@ var commands = map[string]Command{
         Definition: &discordgo.ApplicationCommand{
             Name:        "listbannedroles",
             Description: "Lists all banned roles.",
+			DefaultMemberPermissions: &defaultPerms,
         },
         Handler: handleListBannedRoles,
     },
@@ -56,6 +60,7 @@ var commands = map[string]Command{
 		Definition: &discordgo.ApplicationCommand{
 			Name: "setlogchannel",
 			Description: "Select channel to output logs to.",
+			DefaultMemberPermissions: &defaultPerms,
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionChannel,
