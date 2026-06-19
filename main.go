@@ -18,7 +18,7 @@ var serverConfigs = map[string]ServerConfig{}
 
 func main() {
 	// Setting up discord token
-	discordToken, appID, serverID := loadEnv()
+	discordToken, appID := loadEnv()
 	dg, err := discordgo.New("Bot " + discordToken)
 	if err != nil {
 		log.Println("Error creating Discord session: ", err)
@@ -45,7 +45,7 @@ func main() {
 
 	// Creating commands
 	for cmd := range commands {
-		_, err = dg.ApplicationCommandCreate(appID, serverID, commands[cmd].Definition)
+		_, err = dg.ApplicationCommandCreate(appID, "", commands[cmd].Definition)
 		if err != nil {
 			log.Println("Error creating a new command : ", err)
 		}
@@ -103,7 +103,7 @@ func loadConfig() {
 	serverConfigs = data
 }
 
-func loadEnv() (string, string, string) {
+func loadEnv() (string, string) {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -121,11 +121,5 @@ func loadEnv() (string, string, string) {
 	} else if token == "" {
 		log.Println("APP_ID is empty!")
 	}
-	serverID, exists := os.LookupEnv("SERVER_ID")
-	if !exists {
-		log.Println("SERVER_ID is not set!")
-	} else if token == "" {
-		log.Println("SERVER_ID is empty!")
-	}
-	return token, appID, serverID
+	return token, appID
 }
