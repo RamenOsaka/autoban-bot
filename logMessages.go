@@ -9,7 +9,7 @@ func bannedRoleLog(globalName string, userID string, bannedRole string) discordg
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title:       "🔨 Automatic Ban",
-				Color:       0xff1100, // Green
+				Color:       0xff1100,
 				Fields: []*discordgo.MessageEmbedField{
 					{
 						Name:   "User",
