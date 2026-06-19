@@ -31,3 +31,4 @@ The application will create `config.json` upon starting for the first time, this
 * `/listbannedroles` lists every role which will trigger a ban upon being picked.
 * `/addrole` adds a role to the banned role list.
 * `/removerole` removes a role to the banned role list.
+* `/setlogchannel` sets the channel where the logs for bans, mutes, etc. will be outputed.
