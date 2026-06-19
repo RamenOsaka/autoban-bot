@@ -5,7 +5,7 @@ import (
 )
 
 func ready(s *discordgo.Session, event *discordgo.Ready) {
-	s.UpdateGameStatus(0, ":eye:")
+	s.UpdateGameStatus(0, "👁️")
 }
 
 func handlerRoleOnJoin(s *discordgo.Session, m *discordgo.GuildMemberAdd) {
