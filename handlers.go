@@ -11,7 +11,7 @@ func ready(s *discordgo.Session, event *discordgo.Ready) {
 func handlerRoleOnJoin(s *discordgo.Session, m *discordgo.GuildMemberAdd) {
 	bannedRoleSelected := banRole(s, m.Member)
 	if bannedRoleSelected != "" {
-		data := bannedRoleLog(m.User.GlobalName, m.User.ID, bannedRoleSelected)
+		data := bannedRoleLog(m.User.Username, m.User.ID, bannedRoleSelected)
 		s.ChannelMessageSendComplex(serverConfigs[m.Member.GuildID].LogChannelID, &data)
 	}
 }
