@@ -10,7 +10,7 @@ RamenBot is lightweight and fast, if you only intend to use it on your own serve
 
 ## Installation (for Debian based-distros)
 
-1. Install Go (It is recommended to use Go instead of `apt` as some older repositories won't download a recent enough version of Go) :
+1. Install Go (Download the package directly from Go.dev instead of using `apt` as some older repositories won't download a recent enough version of Go) :
 ```bash
 sudo apt remove golang-go -y # in case go is already installed
 wget https://go.dev/dl/go1.26.4.linux-amd64.tar.gz
