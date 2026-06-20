@@ -21,25 +21,25 @@ source ~/.bashrc
 go version # should output something like "go version go1.26.4 linux/amd64"
 ```
 
-1. Clone this repository to your local directory, and enter the folder :
+2. Clone this repository to your local directory, and enter the folder :
 ```bash
 cd ~
 git clone https://github.com/RamenOsaka/autoban-bot autoban-bot
 cd autoban-bot
 ```
 
-2. Install dependancies and compile the app :
+3. Install dependancies and compile the app :
 ```bash
 go mod download
 go build -o autoban-bot # should create an executable called "autoban-bot"
 ```
 
-3. Set up the environnement variables `DISCORD_TOKEN` and `APP_ID`.
+4. Set up the environnement variables `DISCORD_TOKEN` and `APP_ID`.
 You can create a `.env` file in the root folder of the bot and add one environnement variable by line with the synthax `VARIABLE=VALUE` if you do not want to add global environnenement variables.
     1. `DISCORD_TOKEN`is the identification token of your discord bot, it should be a 3 part alphanumerical string.
     2. `APP_ID` is a number associated to your application ID, found under **General Information** in the developer portal.
 
-4. Lauching the application
+5. Lauching the application
 If everything goes well, you can simply run the executable and the bot will be online and running. 
 ```bash
 autoban-bot
