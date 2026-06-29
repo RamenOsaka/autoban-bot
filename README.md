@@ -8,6 +8,21 @@ RamenBot has to be self hosted, but can run on virtually any server and Operatin
 #### Specs requirements
 RamenBot is lightweight and fast, if you only intend to use it on your own servers, any specs will do. Keep in mind however that no testing has been done for large scale use, anything above a few hundreds of servers has no guarantee to work well on low end servers.
 
+## Setup: Discord Developer Portal
+ 
+Before installing the bot, you need to create a Discord application and configure it properly.
+ 
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications) and create a **New Application**
+2. In the **bot** section under **Privileged Gateway Intents**, enable:
+   - **Server Members Intent**
+   - **Message Content Intent**
+3. Copy your bot token (**Reset Token** → copy). You will need it later.
+4. Go to *OAuth2 → URL Generator*:
+   - Check **bot** and **applications.commands**
+   - Under Bot Permissions, check: **Ban Members**, **Send Messages**, **View Channels**, **Embed Links**
+   - Copy the generated URL, open it in your browser, and invite the bot to your server.
+5. Your `Application ID` is found under **General Information** in the developer portal.
+
 ## Installation (for Debian based-distros)
 
 1. Install Go (Download the package directly from Go.dev instead of using `apt` as some older repositories won't download a recent enough version of Go) :
@@ -48,6 +63,66 @@ autoban-bot
 ``` 
 The application will create `config.json` if no file is found, this file stores every server configuration. If everything goes well, you will see `RamenBot is now running.  Press CTRL-C to exit.`.
 
+## Running as a persistent service with systemd
+ 
+To keep the bot running after closing your terminal and have it restart automatically on crash or reboot, set it up as a systemd service.
+ 
+1. Create the service file
+ 
+```bash
+sudo nano /etc/systemd/system/autoban-bot.service
+```
+ 
+Paste the following content (adjust `WorkingDirectory`, `User` and `ExecStart` if you cloned the repo to a different path):
+ 
+```ini
+[Unit]
+Description=AutoBan Discord Bot (Go)
+After=network.target
+ 
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/autoban-bot
+ExecStart=/home/ubuntu/autoban-bot/autoban-bot
+Restart=always
+RestartSec=10
+ 
+[Install]
+WantedBy=multi-user.target
+```
+ 
+2. Enable and start the service
+ 
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable autoban-bot   # start automatically on reboot
+sudo systemctl start autoban-bot
+sudo systemctl status autoban-bot   # should show: Active: active (running)
+```
+ 
+# Useful service commands
+ 
+| Command | Description |
+|---|---|
+| `sudo systemctl status autoban-bot` | Check if the bot is running |
+| `sudo systemctl restart autoban-bot` | Restart the bot |
+| `sudo systemctl stop autoban-bot` | Stop the bot |
+| `sudo journalctl -u autoban-bot -f` | Watch live logs |
+| `sudo journalctl -u autoban-bot -n 50` | Show last 50 log lines |
+ 
+# Updating the bot
+ 
+When you push changes to GitHub, pull and rebuild on the server:
+ 
+```bash
+cd ~/autoban-bot
+git pull
+go build -o autoban-bot
+sudo systemctl restart autoban-bot
+sudo systemctl status autoban-bot
+```
+---
 ## Functionnalities
 * Banning members if they select a role from a customizable *banned role* list. 
 
