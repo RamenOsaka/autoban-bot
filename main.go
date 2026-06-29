@@ -133,7 +133,7 @@ func loadEnv() (string, string) {
 	appID, exists := os.LookupEnv("APP_ID")
 	if !exists {
 		log.Println("APP_ID is not set!")
-	} else if token == "" {
+	} else if appID == "" {
 		log.Println("APP_ID is empty!")
 	}
 	return token, appID
