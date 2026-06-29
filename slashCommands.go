@@ -7,6 +7,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 )
+
 var commands = map[string]Command{
 	    "ping": {
         Definition: &discordgo.ApplicationCommand{

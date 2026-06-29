@@ -16,6 +16,9 @@ var configFileName = "config.json"
 var defaultPerms int64 = discordgo.PermissionAdministrator
 var serverConfigs = map[string]ServerConfig{}
 
+// test server for devs
+var guildID string = ""
+
 func main() {
 	// Setting up discord token
 	discordToken, appID := loadEnv()
@@ -44,12 +47,7 @@ func main() {
 	}
 
 	// Creating commands
-	for cmd := range commands {
-		_, err = dg.ApplicationCommandCreate(appID, "", commands[cmd].Definition)
-		if err != nil {
-			log.Println("Error creating a new command : ", err)
-		}
-	}
+	loadCommands(dg, appID, guildID)
 
 	log.Println("RamenBot is now running.  Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
@@ -85,6 +83,23 @@ func saveConfig() {
 		log.Println("Could not transform serverConfigs into json data: ", err)
 	}
 	os.WriteFile(configFileName, config, 0644)
+}
+
+func loadCommands(s *discordgo.Session, appID string, guildID string) {
+	_, err := s.ApplicationCommandBulkOverwrite(appID, "", []*discordgo.ApplicationCommand{})
+	if err != nil {
+		log.Println("Could not delete the global commands: ", err)
+	}
+	_, err = s.ApplicationCommandBulkOverwrite(appID, guildID, []*discordgo.ApplicationCommand{})
+	if err != nil {
+		log.Println("Could not delete the server commands commands: ", err)
+	}
+
+	var applicationCommandList []*discordgo.ApplicationCommand
+	for _, cmd := range commands {
+		applicationCommandList = append(applicationCommandList, cmd.Definition)
+	}
+	s.ApplicationCommandBulkOverwrite(appID, guildID, applicationCommandList)
 }
 
 func loadConfig() {
