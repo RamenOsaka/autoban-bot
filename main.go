@@ -99,7 +99,10 @@ func loadCommands(s *discordgo.Session, appID string, guildID string) {
 	for _, cmd := range commands {
 		applicationCommandList = append(applicationCommandList, cmd.Definition)
 	}
-	s.ApplicationCommandBulkOverwrite(appID, guildID, applicationCommandList)
+	_, err = s.ApplicationCommandBulkOverwrite(appID, guildID, applicationCommandList)
+	if err != nil {
+		log.Println("Couldn't register commands: ", err)
+	}
 }
 
 func loadConfig() {
