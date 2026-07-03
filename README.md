@@ -61,7 +61,7 @@ If everything goes well, you can simply run the executable and the bot will be o
 ```bash
 autoban-bot
 ``` 
-The application will create `config.json` if no file is found, this file stores every server configuration. If everything goes well, you will see `RamenBot is now running.  Press CTRL-C to exit.`.
+The application will create `config.json` if no file is found when the first config command is sent, this file stores every server configuration. If everything goes well, you will see `RamenBot is now running.  Press CTRL-C to exit.`.
 
 ## Running as a persistent service with systemd
  
@@ -113,7 +113,7 @@ sudo systemctl status autoban-bot   # should show: Active: active (running)
  
 # Updating the bot
  
-When you push changes to GitHub, pull and rebuild on the server:
+When updates happen on GitHub, pull and rebuild on your server:
  
 ```bash
 cd ~/autoban-bot
