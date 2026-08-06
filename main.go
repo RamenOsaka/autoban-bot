@@ -12,12 +12,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var configFileName = "config.json"
-var defaultPerms int64 = discordgo.PermissionAdministrator
 var serverConfigs = map[string]ServerConfig{}
-
-// test server for devs
-var guildID string = ""
 
 func main() {
 	// Setting up discord token
@@ -36,6 +31,7 @@ func main() {
 	dg.AddHandler(handlerRoleUpdate)
 	dg.AddHandler(handlerRoleOnJoin)
 	dg.AddHandler(handlerInteraction)
+	dg.AddHandler(handlerGuildDelete)
 
 	// Setting up discord Intents
 	dg.Identify.Intents = discordgo.IntentGuildMembers
@@ -47,9 +43,9 @@ func main() {
 	}
 
 	// Creating commands
-	loadCommands(dg, appID, guildID)
+	loadCommands(dg, appID, testGuildID)
 
-	log.Println("RamenBot is now running.  Press CTRL-C to exit.")
+	log.Println("Autoban is now running.  Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
@@ -59,40 +55,30 @@ func main() {
 
 func banRole(s *discordgo.Session, m *discordgo.Member) string {
 	roleName := ""
-	for i := 0; i < len(m.Roles); i++ {
-		if slices.Contains(serverConfigs[m.GuildID].BannedRolesID, m.Roles[i]) {
-			s.GuildBanCreateWithReason(m.GuildID, m.User.ID, "Picked a banned role", 7)
+	if slices.Contains(m.Roles, serverConfigs[m.GuildID].BannedRoleID) && !serverConfigs[m.GuildID].DisableAutoBan {
+		s.GuildBanCreateWithReason(m.GuildID, m.User.ID, "Picked a banned role", 7)
 
-			roleList, err := s.GuildRoles(m.GuildID)
-			if err != nil {
-				log.Println("Couldn't get the list of the server's role : ", err)
-			}
-
-			index := slices.IndexFunc(roleList, func(u *discordgo.Role) bool {
-				return u.ID == m.Roles[i]
-			})
-			roleName = roleList[index].Name
+		serverRoleList, err := s.GuildRoles(m.GuildID)
+		if err != nil {
+			log.Println("Couldn't get the list of the server's role : ", err)
 		}
+
+		index := slices.IndexFunc(serverRoleList, func(u *discordgo.Role) bool {
+			return u.ID == serverConfigs[m.GuildID].BannedRoleID
+		})
+		roleName = serverRoleList[index].Name
 	}
 	return roleName
-}
-
-func saveConfig() {
-	config, err := json.Marshal(serverConfigs)
-	if err != nil {
-		log.Println("Could not transform serverConfigs into json data: ", err)
-	}
-	os.WriteFile(configFileName, config, 0644)
 }
 
 func loadCommands(s *discordgo.Session, appID string, guildID string) {
 	_, err := s.ApplicationCommandBulkOverwrite(appID, "", []*discordgo.ApplicationCommand{})
 	if err != nil {
-		log.Println("Could not delete the global commands: ", err)
+		log.Fatal("Could not delete the global commands: ", err)
 	}
 	_, err = s.ApplicationCommandBulkOverwrite(appID, guildID, []*discordgo.ApplicationCommand{})
 	if err != nil {
-		log.Println("Could not delete the server commands commands: ", err)
+		log.Fatal("Could not delete the server commands commands: ", err)
 	}
 
 	var applicationCommandList []*discordgo.ApplicationCommand
@@ -105,11 +91,19 @@ func loadCommands(s *discordgo.Session, appID string, guildID string) {
 	}
 }
 
+func saveConfig() {
+	config, err := json.Marshal(serverConfigs)
+	if err != nil {
+		log.Println("Could not save guild data: ", err)
+	}
+	os.WriteFile(configFilePath, config, 0644)
+}
+
 func loadConfig() {
 	var data map[string]ServerConfig
-	config, err := os.ReadFile(configFileName)
+	config, err := os.ReadFile(configFilePath)
 	if err != nil {
-		log.Println(configFileName+" Hasn't been created yet : ", err)
+		log.Println(configFilePath, " Hasn't been created yet : ", err)
 		serverConfigs = map[string]ServerConfig{}
 		return
 	} else if len(config) == 0 {
@@ -129,15 +123,15 @@ func loadEnv() (string, string) {
 
 	token, exists := os.LookupEnv("DISCORD_TOKEN")
 	if !exists {
-		log.Println("DISCORD_TOKEN is not set!")
+		log.Fatal("DISCORD_TOKEN is not set!")
 	} else if token == "" {
-		log.Println("DISCORD_TOKEN is empty!")
+		log.Fatal("DISCORD_TOKEN is empty!")
 	}
 	appID, exists := os.LookupEnv("APP_ID")
 	if !exists {
-		log.Println("APP_ID is not set!")
+		log.Fatal("APP_ID is not set!")
 	} else if appID == "" {
-		log.Println("APP_ID is empty!")
+		log.Fatal("APP_ID is empty!")
 	}
 	return token, appID
 }

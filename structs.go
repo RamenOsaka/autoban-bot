@@ -3,10 +3,11 @@ package main
 import "github.com/bwmarrin/discordgo"
 
 type ServerConfig struct {
-	BannedRolesID []string
-	LogChannelID string
+	BannedRoleID   string
+	LogChannelID   string
+	DisableAutoBan bool
 }
 type Command struct {
 	Definition *discordgo.ApplicationCommand
-	Handler func(s *discordgo.Session, i *discordgo.InteractionCreate)
+	Handler    func(s *discordgo.Session, i *discordgo.InteractionCreate)
 }

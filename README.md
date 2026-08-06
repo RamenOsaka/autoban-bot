@@ -124,11 +124,12 @@ sudo systemctl status autoban-bot
 ```
 ---
 ## Functionnalities
-* Banning members if they select a role from a customizable *banned role* list. 
+* Banning members if they select a specified role. 
 
 ## Commands
 * `/ping` pings the bot, use it if you are unsure whether the bot is online or not.
-* `/listbannedroles` lists every role which will trigger a ban upon being picked.
-* `/addrole` adds a role to the banned role list.
-* `/removerole` removes a role to the banned role list.
+* `/showbannedrole` shows the role which will trigger a ban upon being picked.
+* `/setrole` sets or changes the role to trigger a banned.
+* `/disableautoban` disables the bot until turned back on (off by default).
+* `/deletedata` deletes all server data on the server it's used on.
 * `/setlogchannel` sets the channel where the logs for bans, mutes, etc. will be outputed.

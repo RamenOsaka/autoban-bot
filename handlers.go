@@ -24,6 +24,11 @@ func handlerRoleUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
 	}
 }
 
+func handlerGuildDelete(s *discordgo.Session, g *discordgo.GuildDelete) {
+	delete(serverConfigs, g.ID)
+	saveConfig()
+}
+
 func handlerInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if _, exists := serverConfigs[i.GuildID]; !exists {
 		serverConfigs[i.GuildID] = ServerConfig{}
