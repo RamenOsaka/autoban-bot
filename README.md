@@ -49,11 +49,12 @@ go mod download
 go build -o autoban-bot # should create an executable called "autoban-bot"
 ```
 
-4. Set up the environnement variables `DISCORD_TOKEN` and `APP_ID`.
+4. Set up the environnement variables `DISCORD_TOKEN`, `APP_ID` and `ENCRYPTION_KEY`.
 
 You can create a `.env` file in the root folder of the bot and add one environnement variable by line with the synthax `VARIABLE=VALUE` if you do not want to add global environnenement variables.
 * `DISCORD_TOKEN`is the identification token of your discord bot, it should be a 3 part alphanumerical string.
 * `APP_ID` is a number associated to your application ID, found under **General Information** in the developer portal.
+* `ENCRYPTION_KEY` is a base64-encoded 32-byte key used to encrypt `config.json` using AES-256-GCM. You can generate one with `openssl rand -base64 32`, and you must keep it secret. Losing it makes existing the `config.json` data unrecoverable.
 
 5. Lauching the application
 

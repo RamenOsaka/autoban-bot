@@ -11,7 +11,7 @@ func bannedRoleLog(username string, userID string, bannedRole string) discordgo.
 		Embeds: []*discordgo.MessageEmbed{
 			{
 				Title:       "🔨 Member banned",
-				Description: username + " has been banned",
+				Description: "**" + username + " has been banned**",
 				Color:       0xff1100,
 				Fields: []*discordgo.MessageEmbedField{
 					{

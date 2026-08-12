@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"os"
@@ -16,7 +17,8 @@ var serverConfigs = map[string]ServerConfig{}
 
 func main() {
 	// Setting up discord token
-	discordToken, appID := loadEnv()
+	discordToken, appID, tempEncryptionKey := loadEnv()
+	encryptionKey = tempEncryptionKey
 	dg, err := discordgo.New("Bot " + discordToken)
 	if err != nil {
 		log.Println("Error creating Discord session: ", err)
@@ -95,27 +97,38 @@ func saveConfig() {
 	config, err := json.Marshal(serverConfigs)
 	if err != nil {
 		log.Println("Could not save guild data: ", err)
+		return
 	}
-	os.WriteFile(configFilePath, config, 0644)
+	encrypted, err := encryptData(config)
+	if err != nil {
+		log.Println("Could not encrypt guild data: ", err)
+		return
+	}
+	os.WriteFile(configFilePath, encrypted, 0644)
 }
 
 func loadConfig() {
 	var data map[string]ServerConfig
-	config, err := os.ReadFile(configFilePath)
+	encrypted, err := os.ReadFile(configFilePath)
 	if err != nil {
 		log.Println(configFilePath, " Hasn't been created yet : ", err)
 		serverConfigs = map[string]ServerConfig{}
 		return
-	} else if len(config) == 0 {
+	} else if len(encrypted) == 0 {
 		serverConfigs = map[string]ServerConfig{}
 		return
+	}
+
+	config, err := decryptData(encrypted)
+	if err != nil {
+		log.Fatal("Could not decrypt ", configFilePath, ": ", err)
 	}
 
 	json.Unmarshal(config, &data)
 	serverConfigs = data
 }
 
-func loadEnv() (string, string) {
+func loadEnv() (string, string, []byte) {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -133,5 +146,17 @@ func loadEnv() (string, string) {
 	} else if appID == "" {
 		log.Fatal("APP_ID is empty!")
 	}
-	return token, appID
+
+	base64Key, exists := os.LookupEnv("ENCRYPTION_KEY")
+	if !exists || base64Key == "" {
+		log.Fatal("ENCRYPTION_KEY is not set! Generate one with: openssl rand -base64 32")
+	}
+	key, err := base64.StdEncoding.DecodeString(base64Key)
+	if err != nil {
+		log.Fatal("ENCRYPTION_KEY is not valid base64: " + err.Error())
+	}
+	if len(key) != 32 {
+		log.Fatal("ENCRYPTION_KEY must decode to 32 bytes for AES-256")
+	}
+	return token, appID, key
 }

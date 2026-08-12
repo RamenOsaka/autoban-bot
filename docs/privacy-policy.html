@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AutoBan — Privacy Policy</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 800px;
+      margin: 60px auto;
+      padding: 0 24px;
+      color: #2c2c2c;
+      line-height: 1.7;
+    }
+    h1 { font-size: 2rem; margin-bottom: 4px; }
+    h2 { font-size: 1.2rem; margin-top: 40px; border-bottom: 1px solid #e0e0e0; padding-bottom: 6px; }
+    p, li { font-size: 0.97rem; }
+    ul { padding-left: 20px; }
+    a { color: #5865F2; }
+    .updated { color: #888; font-size: 0.9rem; margin-bottom: 40px; }
+  </style>
+</head>
+<body>
+
+<h1>AutoBan — Privacy Policy</h1>
+<p class="updated">Last updated: August 12, 2026</p>
+
+<h2>1. Overview</h2>
+<p>
+  AutoBan ("the Bot") is a Discord moderation bot that automatically bans members
+  who receive a designated forbidden role. This Privacy Policy explains what data
+  the Bot collects, how it is used, how it is protected, and your rights regarding
+  that data.
+</p>
+<p>
+  By adding the Bot to your Discord server, you agree to this Privacy Policy.
+  This policy is designed to comply with Discord's
+  <a href="https://discord.com/developers/docs/policies-and-agreements/developer-terms-of-service" target="_blank">Developer Terms of Service</a>
+  and
+  <a href="https://discord.com/developers/docs/policies-and-agreements/developer-policy" target="_blank">Developer Policy</a>,
+  as well as applicable privacy laws including the GDPR, CCPA, and LGPD.
+</p>
+
+<h2>2. Data We Collect</h2>
+<p>
+  The Bot collects and stores only the minimum data necessary for its core moderation functionality.
+  All stored data is Discord-issued identifiers — no personally identifiable information is collected.
+</p>
+<ul>
+  <li><strong>Discord Server ID (Guild ID):</strong> used to associate your server's configuration with the Bot.</li>
+  <li><strong>Role IDs:</strong> IDs of roles designated by server administrators as forbidden roles that trigger automatic bans.</li>
+  <li><strong>Channel ID:</strong> the ID of the log channel configured by a server administrator to receive ban notifications.</li>
+</ul>
+<p>
+  The Bot does <strong>not</strong> collect, store, or process usernames, display names,
+  message content, user IDs, IP addresses, ban history, or any other personal information.
+  Ban log messages are sent directly to the server's designated log channel on Discord
+  and are not stored outside of Discord's platform.
+</p>
+<p>
+  Data received from Discord's Gateway API (such as member join and role update events)
+  is processed in memory only and is not persisted beyond what is described above.
+  The Bot does not use API Data to profile users, their identities, or their relationships
+  with other users. API Data is never used for advertising, marketing, machine learning,
+  or any purpose beyond providing the Bot's stated moderation functionality.
+</p>
+
+<h2>3. How Data Is Used</h2>
+<p>Collected data is used exclusively to:</p>
+<ul>
+  <li>Identify which roles should trigger an automatic ban on a given server.</li>
+  <li>Determine which channel to send ban log messages to.</li>
+  <li>Determine whether the Bot is active on a given server.</li>
+</ul>
+<p>
+  Data is never sold, licensed, shared with third parties, disclosed to data brokers
+  or advertising networks, or used for any purpose outside of the Bot's stated functionality,
+  in accordance with Discord's Developer Policy (rules 15–18).
+</p>
+
+<h2>4. Data Storage and Security</h2>
+<p>
+  Server configuration data is stored in an encrypted file on a private server.
+  Data is encrypted at rest using AES-256-GCM symmetric encryption, in compliance with
+  Discord's Developer Terms of Service (Section 5(c)) and applicable data protection regulations.
+</p>
+<p>
+  The encryption key is stored separately from the data file and is never exposed in
+  source code or public repositories. No automated backups of configuration data are
+  created or stored externally. Access to the data is restricted to the Bot operator only.
+</p>
+
+<h2>5. Data Retention and Deletion</h2>
+<p>
+  Configuration data for a server is retained only for as long as the Bot remains on that server.
+  <strong>When the Bot is removed from a server (kicked or banned), all configuration data
+  associated with that server is automatically and permanently deleted</strong> from storage
+  without any action required from the server administrator.
+</p>
+<p>
+  Data can also be deleted at any point using the /deletedata slash command through discord.
+  If for any reason server administrators need to, they may also request manual deletion of 
+  their server's data at any time by contacting us at the email address listed in Section 10. 
+  Requests will be fulfilled within 30 days, and confirmation of deletion will be provided upon request.
+</p>
+<p>
+  If the Bot ceases operation entirely, all stored data will be permanently deleted
+  within 30 days of the Bot going offline.
+</p>
+
+<h2>6. Data Sharing</h2>
+<p>
+  API Data obtained through Discord is never shared with any third party except as required
+  by applicable law or regulation. No service providers have access to stored configuration data.
+  In the event that we are required by law to disclose data, we will notify affected parties
+  to the extent permitted by law.
+</p>
+
+<h2>7. Security Incidents</h2>
+<p>
+  In the event of unauthorized access to or use of any stored data, affected server administrators
+  will be notified promptly to the extent required by applicable laws and regulations.
+  Discord will also be notified as required by Section 5(c) of the Developer Terms of Service.
+</p>
+
+<h2>8. Discord's Role</h2>
+<p>
+  The Bot operates on Discord's platform and is subject to
+  <a href="https://discord.com/privacy" target="_blank">Discord's Privacy Policy</a>.
+  The Bot does not bypass or circumvent Discord's privacy, safety, or security features,
+  and respects all user and server decisions to remove or block the Bot.
+</p>
+
+<h2>9. Children's Privacy</h2>
+<p>
+  The Bot is not directed at individuals under the age of 13 or the minimum age required
+  by applicable law in their jurisdiction. The Bot operates exclusively at the server
+  configuration level set by administrators and does not collect, store, or process
+  any personal data belonging to individual Discord users, regardless of age.
+  Server administrators are responsible for ensuring their server complies with applicable
+  laws regarding minors.
+</p>
+
+<h2>10. Your Rights and Contact</h2>
+<p>
+  Depending on your jurisdiction, you may have rights regarding your data, including
+  the right to access, rectification, erasure, and data portability under the GDPR,
+  CCPA, or other applicable laws. Since the Bot stores only Discord-issued server and
+  role identifiers (not personal data), most of these rights are satisfied by the
+  automatic deletion described in Section 5.
+</p>
+<p>
+  For questions, data deletion requests, to report a violation, or for any other
+  privacy-related concerns, please contact us at:<br/>
+  <a href="mailto:autoban.privacy@gmail.com">autoban.privacy@gmail.com</a>
+</p>
+<p>
+  We aim to respond to all requests within 30 days.
+</p>
+
+<h2>11. Changes to This Policy</h2>
+<p>
+  This Privacy Policy may be updated from time to time to reflect changes in our practices
+  or applicable legal requirements. The "Last updated" date at the top of this page will
+  reflect any changes. Continued use of the Bot after changes are posted constitutes
+  acceptance of the updated policy. Material changes will be communicated via bot notifications and 
+  GitHub repository where possible.
+</p>
+
+<h2>12. Governing Law</h2>
+<p>
+  This Privacy Policy is governed by the laws of Canada.
+  Users in the European Economic Area or United Kingdom may also have rights
+  under the GDPR or UK GDPR respectively, as applicable.
+</p>
+
+</body>
+</html>
