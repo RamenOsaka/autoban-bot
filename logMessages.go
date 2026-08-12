@@ -33,3 +33,24 @@ func bannedRoleLog(username string, userID string, bannedRole string) discordgo.
 		},
 	}
 }
+
+func errorLog(err error) discordgo.MessageSend { 
+	return discordgo.MessageSend{
+		Embeds: []*discordgo.MessageEmbed{
+			{
+				Title: "⚠️ An **error** occured!",
+				Color: 0xb5af3a,
+				Footer: &discordgo.MessageEmbedFooter{
+					Text: time.Now().Format("2006-01-02 15:04:05"),
+				},
+				Fields: []*discordgo.MessageEmbedField{
+					{
+						Name:   "Error",
+						Value:  err.Error(),
+						Inline: false,
+					},
+				},
+			},
+		},
+	}
+}

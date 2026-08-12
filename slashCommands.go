@@ -13,6 +13,7 @@ var commands = map[string]Command{
 			Name:                     "ping",
 			Description:              "Hello there",
 			DefaultMemberPermissions: &defaultPerms,
+			Contexts:                 &[]discordgo.InteractionContextType{discordgo.InteractionContextGuild},
 		},
 		Handler: handlePing,
 	},

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"slices"
+	"errors"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
@@ -41,7 +42,7 @@ func main() {
 	// Opening websocket
 	err = dg.Open()
 	if err != nil {
-		log.Println("Error opening Discord session: ", err)
+		log.Fatal("Error opening Discord session: ", err)
 	}
 
 	// Creating commands
@@ -55,14 +56,18 @@ func main() {
 	dg.Close()
 }
 
-func banRole(s *discordgo.Session, m *discordgo.Member) string {
+func banRole(s *discordgo.Session, m *discordgo.Member) (string, error) {
 	roleName := ""
 	if slices.Contains(m.Roles, serverConfigs[m.GuildID].BannedRoleID) && !serverConfigs[m.GuildID].DisableAutoBan {
-		s.GuildBanCreateWithReason(m.GuildID, m.User.ID, "Picked a banned role", 7)
-
+		err := s.GuildBanCreateWithReason(m.GuildID, m.User.ID, "Picked a banned role", 7)
+		if err != nil {
+			log.Println("Couldn't ban the member : ", err)
+			return "", errors.New("Couldn't ban the member : " + err.Error())
+		}
 		serverRoleList, err := s.GuildRoles(m.GuildID)
 		if err != nil {
 			log.Println("Couldn't get the list of the server's role : ", err)
+			return "", errors.New("Couldn't get the list of the server's role : " + err.Error())
 		}
 
 		index := slices.IndexFunc(serverRoleList, func(u *discordgo.Role) bool {
@@ -70,7 +75,7 @@ func banRole(s *discordgo.Session, m *discordgo.Member) string {
 		})
 		roleName = serverRoleList[index].Name
 	}
-	return roleName
+	return roleName, nil
 }
 
 func loadCommands(s *discordgo.Session, appID string, guildID string) {

@@ -9,7 +9,11 @@ func ready(s *discordgo.Session, event *discordgo.Ready) {
 }
 
 func handlerRoleOnJoin(s *discordgo.Session, m *discordgo.GuildMemberAdd) {
-	bannedRoleSelected := banRole(s, m.Member)
+	bannedRoleSelected, err := banRole(s, m.Member)
+	if err != nil {
+		data := errorLog(err)
+		s.ChannelMessageSendComplex(serverConfigs[m.Member.GuildID].LogChannelID, &data)
+	}
 	if bannedRoleSelected != "" {
 		data := bannedRoleLog(m.User.Username, m.User.ID, bannedRoleSelected)
 		s.ChannelMessageSendComplex(serverConfigs[m.Member.GuildID].LogChannelID, &data)
@@ -17,7 +21,11 @@ func handlerRoleOnJoin(s *discordgo.Session, m *discordgo.GuildMemberAdd) {
 }
 
 func handlerRoleUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
-	bannedRoleSelected := banRole(s, m.Member)
+	bannedRoleSelected, err := banRole(s, m.Member)
+	if err != nil {
+		data := errorLog(err)
+		s.ChannelMessageSendComplex(serverConfigs[m.Member.GuildID].LogChannelID, &data)
+	}
 	if bannedRoleSelected != "" {
 		data := bannedRoleLog(m.User.GlobalName, m.User.ID, bannedRoleSelected)
 		s.ChannelMessageSendComplex(serverConfigs[m.Member.GuildID].LogChannelID, &data)
